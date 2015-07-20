@@ -7,8 +7,8 @@ var express = require('express');
 
 var app = express();
 var scoresFinal = [];
-//take express stuff out of the setInterval, use a standin to fill up scores and 
-//then reassign to scores within setInterval once it's ready to go
+// take express stuff out of the setInterval, use a standin to fill up scores and 
+// then reassign to scores within setInterval once it's ready to go
 
 var i = 0;
 setInterval(function () {
@@ -19,8 +19,8 @@ setInterval(function () {
 		jar: true
 	}, 
 	function(err, response, body) {
-        var sitearray = JSON.parse(body);
-     	async.each(sitearray, function(site, callback) {
+		var sitearray = JSON.parse(body);
+		async.each(sitearray, function(site, callback) {
      		//siteAttributes object has a name, url, status, and (load) secs
      		var siteAttributes = {};
      		siteAttributes.sname = site.name;
@@ -48,26 +48,26 @@ setInterval(function () {
 				});
 			}
 			else { 
-			siteAttributes.url = 'NO URL LISTED';
-			scores.push(siteAttributes);
-			callback();
-		}
-	}, function(err) {
-		scoresFinal = scores;
-		console.log("done, scores looks like:   ");
-		scores.forEach(function(siteattr) {
-			console.log(siteattr);
-		});
-		app.delete('/', function (req, res) {
-		  res.send('DELETE request to homepage');
-		});
-		app.get('/', function (req, res) {
-			res.send("Try " + i + "\n \n \n" + scores[30].secs);
-		});
-		i = i + 1;
+				siteAttributes.url = 'NO URL LISTED';
+				scores.push(siteAttributes);
+				callback();
+			}
+		}, function(err) {
+			scoresFinal = scores;
+			console.log("done, scores looks like:   ");
+			scores.forEach(function(siteattr) {
+				console.log(siteattr);
+			});
 		})
 });
 }, 1000*2*60);
+
+
+app.get('/', function (req, res) {
+	while(true) {
+		res.send(scoresFinal);
+	}
+});
 
 var server = app.listen(3000, function () {
 	var host = server.address().address;
@@ -75,4 +75,4 @@ var server = app.listen(3000, function () {
 
 	console.log('Example app listening at http://%s:%s', host, port);
 				//console.log("scores are \n \n \n " + scores);
-});
+			});

@@ -4,9 +4,6 @@ var async = require('async');
 var express = require('express');
 var nunjucks = require('nunjucks');
 
-console.log("UPenn &ndash; Penn IUR".replace(/[^A-Z]+/ig, "")); //remove
-
-
 var app = express();
 app.listen(3001);
 
@@ -29,8 +26,10 @@ setInterval(function () {
 		async.each(sitearray, function(site, callback) {
      		//siteAttributes object has a name, url, status, and (load) secs
      		var siteAttributes = {};
-     		siteAttributes.sname = site.name.replace('&ndash;', '-');
+     		
      		siteAttributes.sname = site.name.replace('&amp;', 'and');
+     		siteAttributes.sname = siteAttributes.sname.replace(/[^A-Z0-9+(). ]+/ig, '-');
+     		siteAttributes.sname = siteAttributes.sname.replace('ndash', '');
      		siteAttributes.scode = site.name.replace(/[^A-Z]+/ig, "");
 			//if the final site works
 			if(site.final_production_url) {
@@ -38,35 +37,32 @@ setInterval(function () {
 				if(site.final_production_url.indexOf("http") == -1) {
 					site.final_production_url = 'http://' + site.final_production_url;
 				}
-				siteAttributes.url = site.final_production_url;
+				//siteAttributes.url = site.final_production_url;
 				var start = +new Date();
 				request(site.final_production_url, function(err, response, body) {
 					var end = +new Date();
 					if(!err) {
 
 						siteAttributes.secs = (end-start)/1000;
-						siteAttributes.statusCode = response.statusCode;
-						if(response.statusCode != 200)
+						if(response.statusCode != 200) {
 							siteAttributes.scolor = '#800000';
+							siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's. with status code ' + response.statusCode;
+						}
 						else {
 							var lightness = 255 - (siteAttributes.secs*12)
 							lightness = Math.round(lightness);
 							if(lightness < 0)
 								lightness = 0;
 							siteAttributes.scolor = rgbToHex(255, lightness, lightness);
+							siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
 						}
 						scores.push(siteAttributes);
-						//create text to display?
-	//assign to a color of red, corresp. to # of seconds, reversed, and assign other 
-	//val.s to 255 since white is 255,255,255
-    //you can use function 
-						//if response.statusCode isn't 200, assign to maroon
 						callback();
 					}
 					else {
-						//create text to display?
 						siteAttributes.scolor = '#800000';
 						siteAttributes.secs = 5000; 
+						siteAttributes.descr = siteAttributes.sname + ' -- load error';
 						scores.push(siteAttributes);
 						callback();
 					}
@@ -75,8 +71,7 @@ setInterval(function () {
 			else { 
 				siteAttributes.scolor = '#800080';
 				siteAttributes.secs = -1;
-				//create text to display?
-				siteAttributes.url = 'NO URL LISTED';
+				siteAttributes.descr = siteAttributes.sname + ' -- no url listed';
 				scores.push(siteAttributes);
 				callback();
 			}

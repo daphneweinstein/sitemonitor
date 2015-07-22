@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+<style>
+
+</style>
+    <link rel="stylesheet" href="main.css">
+    <meta http-equiv="refresh" content="60">
+    <title>welcome to {{ title }}</title>
+  </head>
+  <body>
+    {% for score in items %}
+     {% include "score.html" %}
+    {% endfor %}
+  </body>
+</html>

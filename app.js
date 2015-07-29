@@ -1,5 +1,3 @@
-//add timeouts for debugging, make the internal thing a function
-
 var config = require('./config.js');
 var request = require('request');
 var async = require('async');
@@ -84,7 +82,7 @@ async.series([
 						}
 						checksites.push(rawsite);
 					} else {
-						console.log('no url listed for this site: ' + rawsite);
+						console.log('no url listed for this site: ' + rawsite.name);
 					}
 				});
 
@@ -101,7 +99,6 @@ function(err, results){
 	getValues();
 	setInterval(getValues, 1000*2*60);
 });
-
 
 
 function getValues(){
@@ -230,8 +227,14 @@ function getValues(){
 				     	lastFour = lastFour/4;
 
 				     	//alert true if the recent load times are bad
-				     	if(lastFour > 2*siteAttributes.avg) {
+				     	var alertFactor;
+				     	if(process.argv[2]) {
+				     		alertFactor = process.argv[2]; 
+				     	} else alertFactor = 2;
+				     	if(lastFour > alertFactor*siteAttributes.avg) {
 				        	siteAttributes.alert = true;
+				        	siteAttributes.scolor = 'purple';
+				        	console.log("load time exceeds 200% of average");
 				        }
 				        else siteAttributes.alert = false;
 				    } 

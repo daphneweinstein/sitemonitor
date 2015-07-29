@@ -52,8 +52,7 @@ async.series([
 		    	//clean out all old data 
 		    	var timeRecorded = +new Date();
 				var keepTime = timeRecorded - DAY_IN_MILISECONDS;
-//collection.remove( { time: { $lt: keepTime } } );
-
+				collection.remove( { time: { $lt: keepTime } } );
 		    	callback(null);
         	}
         });
@@ -66,16 +65,9 @@ async.series([
 			jar: true
 			}, 
 			function(err, response, body) {
+				
 				//parse the response
 				var sitearray = JSON.parse(body);
-				
-				// collection.insert({name: 'darienst', value: sitearray}, function (err, result) {
-				// 	if (err) {
-				// 		console.log(err);
-				// 	} else {
-				// 		console.log('Inserted sitearray sucessfully');
-				// 	}
-				// });
 
     			//loop over responses and clean them up
 				sitearray.forEach(function(rawsite) {
@@ -85,6 +77,7 @@ async.series([
 					rawsite.code = rawsite.name.replace(/[^A-Z]+/ig, "");
 
 					if(rawsite.final_production_url) {
+						
 						//clean up the url
 						if(rawsite.final_production_url.indexOf("http") == -1) {
 							rawsite.final_production_url = 'http://' + rawsite.final_production_url;
@@ -96,10 +89,9 @@ async.series([
 				});
 
 				callback(null);
-			});
+		});
     }
 ],
-// optional callback
 function(err, results){
 	if(err) {
 		console.log(err);
@@ -108,30 +100,7 @@ function(err, results){
 
 	getValues();
 	setInterval(getValues, 1000*2*60);
-
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -141,19 +110,10 @@ function getValues(){
 
 	var scores = [];
 
-
 	async.each(checksites, function(site, callback) {
 
-
-
-
-
-
-
-
-
-
-		//siteAttributes object has a name, url, status, and (load) secs
+		//siteAttributes object has a name, url, status, (load) secs, longest (load time)
+		//shortest (load time), avg (load time), lastFourAvg (load time)
      	var siteAttributes = {};
 
 		async.series([
@@ -161,7 +121,7 @@ function getValues(){
 		        siteAttributes.sname = site.name;
 		     	siteAttributes.scode = site.code;
 		     	var start = +new Date();
-		     	var requested = {url: site.final_production_url, timeout: 5000};
+		     	var requested = {url: site.final_production_url/*, timeout: 115000*/};
 
 		     	request(requested, function(err, response, body) {
 		     		var end = +new Date();
@@ -171,13 +131,11 @@ function getValues(){
 		     			if(response.statusCode != 200) {
 		     				siteAttributes.scolor = '#800000';
 		     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's. with status code ' + response.statusCode;
-		     				//manipulate database info
 		     			}
 		     			else {
 		     				var lightness = 255 - (siteAttributes.secs*12)
 		     				lightness = Math.round(lightness);
-		     				if(lightness < 0)
-		     					lightness = 0;
+		     				if(lightness < 0) { lightness = 0; }
 		     				siteAttributes.scolor = rgbToHex(255, lightness, lightness);
 		     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
 		     			}     			
@@ -194,22 +152,14 @@ function getValues(){
 		    },
 		    function(cb){
 		        //store all data as object with a timestamp, scode (name of site), and time to load
-		        console.log(siteAttributes.secs + "   this is line 197");
 	     		var dbEntry = { scode: siteAttributes.scode, time: timestamp, timeToLoad: siteAttributes.secs  };
 
 	     		//insert database entry
 	     		collection.insert(dbEntry, function (err, result) {
 					if (err) {
 						console.log(err);
-					} else {
-						//console.log('Inserted databaseEntry sucessfully');
-					}
+					} 
 				});
-
-	     		
-	     		
-
-
 
 	     		//calculate total average
 	     		var averageObj = collection.aggregate(
@@ -228,17 +178,10 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-
-				        //console.log('Found full average? : ', result[0].fullAvg);
-				     	// console.log('\n \n \n');
 				        siteAttributes.avg = result[0].fullAvg;
-				        //do work if we want average
-				    } else {
-				        console.log('No document(s) found with defined "find" criteria!');
-				    }
-			    cb(null);
-			    });
-		        
+				    } 
+			    	cb(null);
+			    }); 
 		    },
 		    function(cb){
 		        // //get longest load time
@@ -249,17 +192,10 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-				        //console.log('Found:', result[0].timeToLoad);
-				     	// console.log('\n \n \n');
 				        siteAttributes.longest = result[0].timeToLoad;
-				        //do work if we want average
-				    } else {
-				        console.log('No document(s) found with defined "find" criteria!');
-				    }
+				    } 
 					cb(null);
-
-			    });
-		        
+			    });   
 		    },
 		    function(cb){
 		        //get shortest load time
@@ -270,12 +206,8 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-				        //console.log('Found:', result);
 				        siteAttributes.shortest = result[0].timeToLoad;
-				        //do work if we want average
-				    } else {
-				        console.log('No document(s) found with defined "find" criteria!');
-				    }
+				    } 
 			    	cb(null);
 			    });
 		        
@@ -302,37 +234,18 @@ function getValues(){
 				        	siteAttributes.alert = true;
 				        }
 				        else siteAttributes.alert = false;
-				    } else {
-				        console.log('No document(s) found with defined "find" criteria!');
-				    }
+				    } 
 			    cb(null);
 			    }); 
 		    }
 		],
-		// optional callback
 		function(err){
 		    //TEMPORARY PATCH update the description
-			console.log(siteAttributes.longest + "  longest at line 313");
      		siteAttributes.descr = siteAttributes.descr + " average: " + siteAttributes.avg + " lowest: " + siteAttributes.shortest + " highest: " + siteAttributes.longest;
 
      		scores.push(siteAttributes);
      		callback();
 		});
-				
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	}, function(err) {
 		timeRecorded = +new Date();
@@ -340,33 +253,15 @@ function getValues(){
 		scores.sort(compare); 
 		scoresFinal = scores;
 		
-		keepTime = timeRecorded - DAY_IN_MILISECONDS;
-
 		//remove old times as we go along
+		keepTime = timeRecorded - DAY_IN_MILISECONDS;
 		collection.remove( { time: { $lt: keepTime } } );
+
 		collection.remove( { timeToLoad: { $gt: 4990 } } );
 		collection.remove(  { timeToLoad: null } );
 
-
 	}/*close error function*/);//close async.each
-
-
-}//close full function
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}//close full getValues
 
 
 function rgbToHex(r, g, b) { 

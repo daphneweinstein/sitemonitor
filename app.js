@@ -175,7 +175,8 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-				        siteAttributes.avg = result[0].fullAvg;
+				    	var roundedAvg = Math.ceil(result[0].fullAvg * 1000) / 1000;
+				        siteAttributes.avg = roundedAvg;
 				    } 
 			    	cb(null);
 			    }); 

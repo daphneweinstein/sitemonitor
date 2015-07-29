@@ -112,153 +112,228 @@ function(err, results){
 });
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getValues(){
+
+	var timestamp = +new Date();
+
 	var scores = [];
+
+
 	async.each(checksites, function(site, callback) {
-     	//siteAttributes object has a name, url, status, and (load) secs
+
+
+
+
+
+
+
+
+
+
+		//siteAttributes object has a name, url, status, and (load) secs
      	var siteAttributes = {};
-     	siteAttributes.sname = site.name;
-     	siteAttributes.scode = site.code;
 
-     	var start = +new Date();
-     	var requested = {url: site.final_production_url, timeout: 5000};
-     	request(requested, function(err, response, body) {
-     		var end = +new Date();
-     		if(!err) {
+		async.series([
+		    function(cb){
+		        siteAttributes.sname = site.name;
+		     	siteAttributes.scode = site.code;
+		     	var start = +new Date();
+		     	var requested = {url: site.final_production_url, timeout: 5000};
 
-     			siteAttributes.secs = (end-start)/1000;
-     			if(response.statusCode != 200) {
-     				siteAttributes.scolor = '#800000';
-     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's. with status code ' + response.statusCode;
-     				//manipulate database info
-     			}
-     			else {
-     				var lightness = 255 - (siteAttributes.secs*12)
-     				lightness = Math.round(lightness);
-     				if(lightness < 0)
-     					lightness = 0;
-     				siteAttributes.scolor = rgbToHex(255, lightness, lightness);
-     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
-     			}     			
-     		}
-     		else {
-     			siteAttributes.scolor = '#800000';
-     			siteAttributes.secs = 5000; 
-     			siteAttributes.descr = siteAttributes.sname + ' -- load error';
-     			
-     		}
+		     	request(requested, function(err, response, body) {
+		     		var end = +new Date();
+		     		if(!err) {
 
-     		//store all data as object with a timestamp, scode (name of site), and time to load
-     		var dbEntry = { scode: siteAttributes.scode, time: start, timeToLoad: siteAttributes.secs  };
+		     			siteAttributes.secs = (end-start)/1000;
+		     			if(response.statusCode != 200) {
+		     				siteAttributes.scolor = '#800000';
+		     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's. with status code ' + response.statusCode;
+		     				//manipulate database info
+		     			}
+		     			else {
+		     				var lightness = 255 - (siteAttributes.secs*12)
+		     				lightness = Math.round(lightness);
+		     				if(lightness < 0)
+		     					lightness = 0;
+		     				siteAttributes.scolor = rgbToHex(255, lightness, lightness);
+		     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
+		     			}     			
+		     		}
+		     		else {
+		     			siteAttributes.scolor = '#800000';
+		     			siteAttributes.secs = 5000; 
+		     			siteAttributes.descr = siteAttributes.sname + ' -- load error';
+		     			
+     				}
+     			cb(null);
+     			});//close request
+		        
+		    },
+		    function(cb){
+		        //store all data as object with a timestamp, scode (name of site), and time to load
+		        console.log(siteAttributes.secs + "   this is line 197");
+	     		var dbEntry = { scode: siteAttributes.scode, time: timestamp, timeToLoad: siteAttributes.secs  };
 
-     		//insert database entry
-     		collection.insert(dbEntry, function (err, result) {
-				if (err) {
-					console.log(err);
-				} else {
-					//console.log('Inserted databaseEntry sucessfully');
-				}
-			});
+	     		//insert database entry
+	     		collection.insert(dbEntry, function (err, result) {
+					if (err) {
+						console.log(err);
+					} else {
+						//console.log('Inserted databaseEntry sucessfully');
+					}
+				});
 
-     		//get shortest load time
-     		var cursor = collection.find({scode: siteAttributes.scode });
-     		cursor.sort({timeToLoad: 1}); 
-     		cursor.limit(1);
-     		cursor.toArray(function (err, result) {
-			    if (err) {
-			        console.log(err);
-			    } else if (result.length) {
-			        // console.log('Found:', result);
-			        siteAttributes.shortest = result.timeToLoad;
-			        //do work if we want average
-			    } else {
-			        console.log('No document(s) found with defined "find" criteria!');
-			    }
-		    });
-
-     		// //get longest load time
-     		var cursor = collection.find({scode: siteAttributes.scode });
-     		cursor.sort({timeToLoad: -1}); 
-     		cursor.limit(1);
-     		cursor.toArray(function (err, result) {
-			    if (err) {
-			        console.log(err);
-			    } else if (result.length) {
-			      //   console.log('Found:', result);
-			     	// console.log('\n \n \n');
-			        siteAttributes.longest = result.timeToLoad;
-			        //do work if we want average
-			    } else {
-			        console.log('No document(s) found with defined "find" criteria!');
-			    }
-		    });
+	     		
+	     		
 
 
 
+	     		//calculate total average
+	     		var averageObj = collection.aggregate(
+				   [
+				   	{ $match: { scode: siteAttributes.scode } },
+				     {
+				       
+				       $group:
+				         {
+				           _id: "$scode",
+				           fullAvg: { $avg: "$timeToLoad" } 
+				         }
+				     }
+				   ]
+				).toArray(function (err, result) {
+				    if (err) {
+				        console.log(err);
+				    } else if (result.length) {
 
-     		//calculate total average
-     		var averageObj = collection.aggregate(
-			   [
-			   	{ $match: { scode: siteAttributes.scode } },
-			     {
-			       
-			       $group:
-			         {
-			           _id: "$scode",
-			           fullAvg: { $avg: "$timeToLoad" } 
-			         }
-			     }
-			   ]
-			).toArray(function (err, result) {
-			    if (err) {
-			        console.log(err);
-			    } else if (result.length) {
+				        //console.log('Found full average? : ', result[0].fullAvg);
+				     	// console.log('\n \n \n');
+				        siteAttributes.avg = result[0].fullAvg;
+				        //do work if we want average
+				    } else {
+				        console.log('No document(s) found with defined "find" criteria!');
+				    }
+			    cb(null);
+			    });
+		        
+		    },
+		    function(cb){
+		        // //get longest load time
+	     		var cursor = collection.find({scode: siteAttributes.scode });
+	     		cursor.sort({timeToLoad: -1}); 
+	     		cursor.limit(1);
+	     		cursor.toArray(function (err, result) {
+				    if (err) {
+				        console.log(err);
+				    } else if (result.length) {
+				        //console.log('Found:', result[0].timeToLoad);
+				     	// console.log('\n \n \n');
+				        siteAttributes.longest = result[0].timeToLoad;
+				        //do work if we want average
+				    } else {
+				        console.log('No document(s) found with defined "find" criteria!');
+				    }
+					cb(null);
 
-			        //console.log('Found full average? : ', result[0].fullAvg);
-			     	// console.log('\n \n \n');
-			        siteAttributes.avg = result[0].fullAvg;
-			        //do work if we want average
-			    } else {
-			        console.log('No document(s) found with defined "find" criteria!');
-			    }
-		    });
+			    });
+		        
+		    },
+		    function(cb){
+		        //get shortest load time
+	     		var cursor = collection.find({scode: siteAttributes.scode });
+	     		cursor.sort({timeToLoad: 1}); 
+	     		cursor.limit(1);
+	     		cursor.toArray(function (err, result) {
+				    if (err) {
+				        console.log(err);
+				    } else if (result.length) {
+				        //console.log('Found:', result);
+				        siteAttributes.shortest = result[0].timeToLoad;
+				        //do work if we want average
+				    } else {
+				        console.log('No document(s) found with defined "find" criteria!');
+				    }
+			    	cb(null);
+			    });
+		        
+		    },
+		    function(cb){
+		        
+	     		//calculate last 4 average
+	     		var cursor = collection.find({scode: siteAttributes.scode });
+	     		cursor.sort({time: -1}); 
+	     		cursor.limit(4);
+	     		cursor.toArray(function (err, result) {
+				    if (err) {
+				        console.log(err);
+				    } else if (result.length) {
+						//calculate average of most recent 4 loads
+				     	var lastFour = 0;
+				     	result.forEach(function(res) {
+				     		lastFour = lastFour + res.timeToLoad;
+				     	});
+				     	lastFour = lastFour/4;
 
+				     	//alert true if the recent load times are bad
+				     	if(lastFour > 2*siteAttributes.avg) {
+				        	siteAttributes.alert = true;
+				        }
+				        else siteAttributes.alert = false;
+				    } else {
+				        console.log('No document(s) found with defined "find" criteria!');
+				    }
+			    cb(null);
+			    }); 
+		    }
+		],
+		// optional callback
+		function(err){
+		    //TEMPORARY PATCH update the description
+			console.log(siteAttributes.longest + "  longest at line 313");
+     		siteAttributes.descr = siteAttributes.descr + " average: " + siteAttributes.avg + " lowest: " + siteAttributes.shortest + " highest: " + siteAttributes.longest;
 
-     		//calculate last 4 average
-     		var cursor = collection.find({scode: siteAttributes.scode });
-     		cursor.sort({time: -1}); 
-     		cursor.limit(4);
-     		cursor.toArray(function (err, result) {
-			    if (err) {
-			        console.log(err);
-			    } else if (result.length) {
-					//calculate average of most recent 4 loads
-			     	var lastFour = 0;
-			     	result.forEach(function(res) {
-			     		lastFour = lastFour + res.timeToLoad;
-			     	});
-			     	lastFour = lastFour/4;
-
-			     	//alert true if the recent load times are bad
-			     	if(lastFour > 2*siteAttributes.avg) {
-			        	siteAttributes.alert = true;
-			        }
-			        else siteAttributes.alert = false;
-			    } else {
-			        console.log('No document(s) found with defined "find" criteria!');
-			    }
-		    });
-
-//TEMPORARY PATCH update the description
-			console.log(siteAttributes.avg);
-     		siteAttributes.descr = siteAttributes.descr + " average: " + siteAttributes.avg 
-     		+ " lowest: " + siteAttributes.shortest + " highest: " + siteAttributes.longest;
-
-     		
+     		scores.push(siteAttributes);
      		callback();
-     	});
-
+		});
 				
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	}, function(err) {
 		timeRecorded = +new Date();
 
@@ -269,9 +344,14 @@ function getValues(){
 
 		//remove old times as we go along
 		collection.remove( { time: { $lt: keepTime } } );
+		collection.remove( { timeToLoad: { $gt: 4990 } } );
+		collection.remove(  { timeToLoad: null } );
 
-	});
-}
+
+	}/*close error function*/);//close async.each
+
+
+}//close full function
 	
 
 

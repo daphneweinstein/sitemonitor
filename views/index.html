@@ -1,16 +1,40 @@
 <!DOCTYPE html>
 <html>
   <head>
-<style>
-
-</style>
-    <link rel="stylesheet" href="main.css">
+  <style type="text/css">
+    
+  </style>
     <meta http-equiv="refresh" content="60">
-    <title>welcome to {{ title }}</title>
+    <title>P'unk Site Stats</title>
+    <link rel="stylesheet" href="stylesheets/main.css">
   </head>
   <body>
-    {% for score in items %}
-     {% include "score.html" %}
-    {% endfor %}
+    <h2>------------------------------------------------------ IN TROUBLE ------------------------------------------------------</h2>
+    <div class ="grid-container">
+      {% for site in alert %}
+        <div class = "box">
+          <h3>{{site.sname}}</h3>
+          <h6 class = "average-label">LAST 4</h6>
+          <div class= "value">{{ site.lastFour }}</div>
+          <h6 class = "statuscode-label">STATUS CODE</h6>
+          <div class= "value">{{ site.statusCode }}</div>
+          <h6 class = "space"></h6>
+          <div class = "value">{{ site.descr }}</div>
+        </div>
+      {% endfor %}
+    <h2>-------------------------------------------------------- WARNING --------------------------------------------------------</h2>
+    <div class ="grid-container">
+      {% for site in warning %}
+        <div class = "box">
+          <h3>{{site.sname}}</h3>
+          <h6 class = "average-label">LAST 4</h6>
+          <div class= "value">{{ site.lastFour }}</div>
+          <h6 class = "statuscode-label">STATUS CODE</h6>
+          <div class= "value">{{ site.statusCode }}</div>
+          <h6 class = "space"></h6>
+          <div class = "value">{{ site.descr }}</div>
+        </div>
+      {% endfor %}
+    </div>
   </body>
 </html>

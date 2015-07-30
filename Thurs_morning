@@ -10,7 +10,6 @@ var DAY_IN_MILISECONDS = 86400000;
 
 //set up the server
 app.listen(3001);
-app.use(express.static('public'));
 
 //use nunjucks instead of jade
 nunjucks.configure('views', {
@@ -19,13 +18,11 @@ nunjucks.configure('views', {
 });
 
 //set up route for home page
-var alerter = [];
-var warner = [];
+var scoresFinal = [];
 app.get('/', function(req, res) {
 	res.render('index.html', {
 		title : 'Test Page',
-		alert : alerter,
-		warning: warner
+		items : scoresFinal
 	});
 });
 
@@ -107,15 +104,12 @@ function(err, results){
 function getValues(){
 
 	var timestamp = +new Date();
-	//scores = [];
-	var warnerHelper = [];
-	var alerterHelper = [];
+
+	var scores = [];
 
 	async.each(checksites, function(site, callback) {
-		
 
-
-		//siteAttributes object has a name, url, code, statusCode, (load) secs, longest (load time)
+		//siteAttributes object has a name, url, status, (load) secs, longest (load time)
 		//shortest (load time), avg (load time), lastFourAvg (load time)
      	var siteAttributes = {};
 
@@ -129,23 +123,25 @@ function getValues(){
 		     	request(requested, function(err, response, body) {
 		     		var end = +new Date();
 		     		if(!err) {
+
 		     			siteAttributes.secs = (end-start)/1000;
-		     			siteAttributes.statusCode = response.statusCode;
 		     			if(response.statusCode != 200) {
-		     				siteAttributes.alert = true; 
-		     				//
+		     				siteAttributes.scolor = '#800000';
+		     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's. with status code ' + response.statusCode;
 		     			}
-		     			// else {
-		     			// 	var lightness = 255 - (siteAttributes.secs*12)
-		     			// 	lightness = Math.round(lightness);
-		     			// 	if(lightness < 0) { lightness = 0; }
-		     			// 	siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
-		     			// }     			
+		     			else {
+		     				var lightness = 255 - (siteAttributes.secs*12)
+		     				lightness = Math.round(lightness);
+		     				if(lightness < 0) { lightness = 0; }
+		     				siteAttributes.scolor = rgbToHex(255, lightness, lightness);
+		     				siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
+		     			}     			
 		     		}
 		     		else {
-		     			siteAttributes.alert = true;
+		     			siteAttributes.scolor = '#800000';
 		     			siteAttributes.secs = 5000; 
-		     			siteAttributes.statusCode = 'N/A';
+		     			siteAttributes.descr = siteAttributes.sname + ' -- load error';
+		     			
      				}
      			cb(null);
      			});//close request
@@ -179,11 +175,8 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-				    	var roundedAvg = Math.ceil(result[0].fullAvg * 100) / 100;
-				        if (result[0].fullAvg == 5000) {
-				        	siteAttributes.avg = 'ERROR';
-				        } 
-				        else siteAttributes.avg = roundedAvg;
+				    	var roundedAvg = Math.ceil(result[0].fullAvg * 1000) / 1000;
+				        siteAttributes.avg = roundedAvg;
 				    } 
 			    	cb(null);
 			    }); 
@@ -197,11 +190,7 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-				    	var roundedAvg = Math.ceil(result[0].timeToLoad * 100) / 100;
-				        siteAttributes.longest = roundedAvg;
-				    	if (siteAttributes.longest == 5000) {
-				        	siteAttributes.longest = 'ERROR';
-				        }
+				        siteAttributes.longest = result[0].timeToLoad;
 				    } 
 					cb(null);
 			    });   
@@ -215,11 +204,7 @@ function getValues(){
 				    if (err) {
 				        console.log(err);
 				    } else if (result.length) {
-				        var roundedAvg = Math.ceil(result[0].timeToLoad * 100) / 100;
-				        siteAttributes.shortest = roundedAvg;
-				        if (siteAttributes.shortest == 5000) {
-				        	siteAttributes.shortest = 'ERROR';
-				        }
+				        siteAttributes.shortest = result[0].timeToLoad;
 				    } 
 			    	cb(null);
 			    });
@@ -234,7 +219,6 @@ function getValues(){
 	     		cursor.toArray(function (err, result) {
 				    if (err) {
 				        console.log(err);
-				        cb(err);
 				    } else if (result.length) {
 						//calculate average of most recent 4 loads
 				     	var lastFour = 0;
@@ -247,63 +231,38 @@ function getValues(){
 				     	var alertFactor;
 				     	if(process.argv[2]) {
 				     		alertFactor = process.argv[2]; 
-				     	} else alertFactor = 2.5;
-				     	
-				     	if(process.argv[3]) {
-				     		warningFactor = process.argv[2]; 
-				     	} else warningFactor = 1.5;
-
+				     	} else alertFactor = 2;
 				     	if(lastFour > alertFactor*siteAttributes.avg) {
 				        	siteAttributes.alert = true;
-				        } else if(lastFour > warningFactor*siteAttributes.avg) {
-				        	siteAttributes.warning = true;
-				        } 
-
-				        var roundedAvg = Math.ceil(lastFour * 100) / 100;
-				    	siteAttributes.lastFour = roundedAvg;
-						
-						if(lastFour > 1000) {
-				        	siteAttributes.lastFour = "ERROR";
+				        	siteAttributes.scolor = 'purple';
+				        	console.log("load time exceeds 200% of average");
 				        }
-
-				    	if(siteAttributes.secs == 5000) {
-							siteAttributes.secs = 'ERROR';
-						}
-						cb(null);
+				        else siteAttributes.alert = false;
 				    } 
-			    
+			    cb(null);
 			    }); 
-		    },
-		    function(cb) { 
-				if (siteAttributes.avg == 'ERROR') {
-					siteAttributes.descr = siteAttributes.shortest + ' --- ' + siteAttributes.avg + ' --- ' + siteAttributes.longest;
-				} else siteAttributes.descr = siteAttributes.shortest + ' ----- ' + siteAttributes.avg + ' ----- ' + siteAttributes.longest;
-	     		if(siteAttributes.alert == true) {
-	     			alerterHelper.push(siteAttributes);
-	     		} else if(siteAttributes.warning == true) {
-	     			warnerHelper.push(siteAttributes);
-	     		}	
-				cb(null);
-			}
+		    }
 		],
 		function(err){
+		    //TEMPORARY PATCH update the description
+     		siteAttributes.descr = siteAttributes.descr + " average: " + siteAttributes.avg + " lowest: " + siteAttributes.shortest + " highest: " + siteAttributes.longest;
+
+     		scores.push(siteAttributes);
      		callback();
 		});
 
 	}, function(err) {
 		timeRecorded = +new Date();
 
-		warner = warnerHelper;
-		alerter = alerterHelper;
-
+		scores.sort(compare); 
+		scoresFinal = scores;
+		
 		//remove old times as we go along
 		keepTime = timeRecorded - DAY_IN_MILISECONDS;
 		collection.remove( { time: { $lt: keepTime } } );
 
 		collection.remove( { timeToLoad: { $gt: 4990 } } );
 		collection.remove(  { timeToLoad: null } );
-
-
 
 	}/*close error function*/);//close async.each
 }//close full getValues

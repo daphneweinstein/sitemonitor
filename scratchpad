@@ -1,0 +1,14 @@
+.box {
+  display: inline-block;
+  width: 20%;
+  padding: 2%;
+  color: green;
+}
+
+
+
+
+
+
+
+

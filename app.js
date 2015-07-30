@@ -107,14 +107,11 @@ function(err, results){
 function getValues(){
 
 	var timestamp = +new Date();
-	//scores = [];
 	var warnerHelper = [];
 	var alerterHelper = [];
 
 	async.each(checksites, function(site, callback) {
 		
-
-
 		//siteAttributes object has a name, url, code, statusCode, (load) secs, longest (load time)
 		//shortest (load time), avg (load time), lastFourAvg (load time)
      	var siteAttributes = {};
@@ -124,7 +121,7 @@ function getValues(){
 		        siteAttributes.sname = site.name;
 		     	siteAttributes.scode = site.code;
 		     	var start = +new Date();
-		     	var requested = {url: site.final_production_url/*, timeout: 115000*/};
+		     	var requested = {url: site.final_production_url};
 
 		     	request(requested, function(err, response, body) {
 		     		var end = +new Date();
@@ -134,13 +131,7 @@ function getValues(){
 		     			if(response.statusCode != 200) {
 		     				siteAttributes.alert = true; 
 		     				//
-		     			}
-		     			// else {
-		     			// 	var lightness = 255 - (siteAttributes.secs*12)
-		     			// 	lightness = Math.round(lightness);
-		     			// 	if(lightness < 0) { lightness = 0; }
-		     			// 	siteAttributes.descr = siteAttributes.sname + ' loaded in ' + siteAttributes.secs + 's.';
-		     			// }     			
+		     			}   			
 		     		}
 		     		else {
 		     			siteAttributes.alert = true;

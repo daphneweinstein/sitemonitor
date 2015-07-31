@@ -12,7 +12,7 @@
     <h2>------------------------------------------------------ IN TROUBLE ------------------------------------------------------</h2>
     <div class ="grid-container">
       {% for site in alert %}
-        <div class = "box">
+        <div class = "box-alert">
           <h3>{{site.sname}}</h3>
           <h6 class = "average-label">LAST 4</h6>
           <div class= "value">{{ site.lastFour }}</div>
@@ -25,7 +25,7 @@
     <h2>-------------------------------------------------------- WARNING --------------------------------------------------------</h2>
     <div class ="grid-container">
       {% for site in warning %}
-        <div class = "box">
+        <div class = "box-warning">
           <h3>{{site.sname}}</h3>
           <h6 class = "average-label">LAST 4</h6>
           <div class= "value">{{ site.lastFour }}</div>

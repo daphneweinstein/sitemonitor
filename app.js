@@ -238,10 +238,10 @@ function getValues(){
 				     	var alertFactor;
 				     	if(process.argv[2]) {
 				     		alertFactor = process.argv[2]; 
-				     	} else alertFactor = 2.5;
+				     	} else alertFactor = 3;
 				     	
 				     	if(process.argv[3]) {
-				     		warningFactor = process.argv[2]; 
+				     		warningFactor = process.argv[3]; 
 				     	} else warningFactor = 1.5;
 
 				     	if(lastFour > alertFactor*siteAttributes.avg) {

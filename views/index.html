@@ -14,12 +14,37 @@
       {% for site in alert %}
         <div class = "box-alert">
           <h3>{{site.sname}}</h3>
-          <h6 class = "average-label">LAST 4</h6>
-          <div class= "value">{{ site.lastFour }}</div>
-          <h6 class = "statuscode-label">STATUS CODE</h6>
-          <div class= "value">{{ site.statusCode }}</div>
-          <h6 class = "space"></h6>
-          <div class = "value">{{ site.descr }}</div>
+              <table>
+                <tr>
+                  <td class= "changesize">LAST 4</td>
+                  <td> </td>
+                  <td>{{ site.lastFour }}</td>
+                </tr>
+                <tr>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td class= "changesize">STATUS</td>
+                </tr>
+                <tr>
+                  <td class= "changesize">CODE</td>
+                  <td></td>
+                  <td>{{ site.statusCode }}</td>
+                </tr> 
+                <tr>
+                  <td>-----------</td>
+                  <td>-----------</td>
+                  <td>-----------</td>
+                </tr>
+                <tr>
+                  <td class= "changesize2">{{ site.shortest }}</td>
+                  <td class= "changesize2">{{ site.avg }}</td>
+                  <td class= "changesize2">{{ site.longest }}</td>
+                </tr>
+              </table>
         </div>
       {% endfor %}
     <h2>-------------------------------------------------------- WARNING --------------------------------------------------------</h2>
@@ -27,12 +52,37 @@
       {% for site in warning %}
         <div class = "box-warning">
           <h3>{{site.sname}}</h3>
-          <h6 class = "average-label">LAST 4</h6>
-          <div class= "value">{{ site.lastFour }}</div>
-          <h6 class = "statuscode-label">STATUS CODE</h6>
-          <div class= "value">{{ site.statusCode }}</div>
-          <h6 class = "space"></h6>
-          <div class = "value">{{ site.descr }}</div>
+          <table>
+            <tr>
+              <td class= "changesize">LAST 4</td>
+              <td> </td>
+              <td>{{ site.lastFour }}</td>
+            </tr>
+            <tr>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+            </tr>
+            <tr>
+              <td class= "changesize">STATUS</td>
+            </tr>
+            <tr>
+              <td class= "changesize">CODE</td>
+              <td></td>
+              <td>{{ site.statusCode }}</td>
+            </tr> 
+            <tr>
+              <td>-----------</td>
+              <td>-----------</td>
+              <td>-----------</td>
+            </tr>
+            <tr>
+              <td class= "changesize2">{{ site.shortest }}</td>
+              <td class= "changesize2">{{ site.avg }}</td>
+              <td class= "changesize2">{{ site.longest }}</td>
+            </tr>
+          </table>
         </div>
       {% endfor %}
     </div>
